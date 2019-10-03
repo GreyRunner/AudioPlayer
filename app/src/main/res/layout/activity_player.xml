@@ -122,6 +122,16 @@
             android:background="@drawable/btn_grey"
             android:theme="@style/RippleWhite"/>
 
+        <ImageButton
+            android:id="@+id/player_image_list_change_mode"
+            android:src="@drawable/ic_action_loop"
+            android:layout_toRightOf="@id/player_image_list_add"
+            android:layout_width="50dp"
+            android:layout_height="49dp"
+            android:paddingTop="4dp"
+            android:background="@drawable/btn_ripple"
+            android:theme="@style/RippleWhite"/>
+
 
     </RelativeLayout>
 

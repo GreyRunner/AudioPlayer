@@ -50,21 +50,25 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
     private exposedServices iService;
     final private myConnection conn = new myConnection();
 
-    private ImageButton player_start_pause;
+    private ImageButton player_start_pause,btn_prev,btn_next;
     private boolean isPlaying = false;
     View myView;
     float downX,screenWidth;
-    private song songInfo;
+    private static song songInfo;
     private String filePath;
     public static int duration;
     private boolean navigatedFromSearch = false;
-    TextView tvSongName,tvAlbumName,tvArtist;
+    static TextView tvSongName,tvAlbumName,tvArtist;
     private static SeekBar seekBar;
     private static TextView tvCurrentPosition,tvDuration;
     private Needle needle;
     private Disk disk;
-    private ImageButton listAdd,listDrop;
-    private ArrayList<String> playListId,playListName;
+    private ImageButton listAdd,listDrop,btn_change_mode;
+    private ArrayList<String> playListId = null,playListName = null;
+
+    private ArrayList<song> playList;
+    private int position;
+    private boolean transferPlayList = false;
 
     public static Handler handler = new Handler(){
         @Override
@@ -85,6 +89,18 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
                     int currentPosition = bundle.getInt("currentPosition");
                     tvCurrentPosition.setText((currentPosition/60000) + ":" + (currentPosition/1000 - currentPosition/60000*60));
                     seekBar.setProgress(currentPosition);
+                    break;
+                }
+                case GlobalData.MSG_SONG_NEWSONGINFO:{
+                    Bundle bundle = msg.getData();
+                    song temp = (song)bundle.getSerializable("songInfo");
+                    songInfo = temp;
+                    tvSongName.setText(temp.getName());
+                    tvAlbumName.setText(temp.getAlbumName().length() > 12 ? temp.getAlbumName().substring(0,12) + "..." : temp.getAlbumName());
+                    tvArtist.setText(temp.getArtists().get(0).getName());
+                    tvCurrentPosition.setText("0:0");
+                    tvDuration.setText((temp.getDuration()/60000) +":"+(temp.getDuration()/1000 - temp.getDuration()/60000*60));
+                    seekBar.setMax(temp.getDuration());
                     break;
                 }
             }
@@ -147,6 +163,22 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
                     player_start_pause.setClickable(false);
                     return;
                 }
+                break;
+            }
+            case "playList":{
+                playList = (ArrayList<song>)from.getSerializableExtra("songList");
+                position = from.getIntExtra("position",0);
+                songInfo = playList.get(position);
+                filePath = GlobalData.dirPath + "/music_" + songInfo.getId() +".mp3";
+
+                tvSongName.setText(songInfo.getName());
+                tvAlbumName.setText(songInfo.getAlbumName().length() > 12 ? songInfo.getAlbumName().substring(0,12) + "..." : songInfo.getAlbumName());
+                tvArtist.setText(songInfo.getArtists().get(0).getName().length() > 12 ? songInfo.getArtists().get(0).getName().substring(0,12)+"..." : songInfo.getArtists().get(0).getName());
+                tvCurrentPosition.setText("0:0");
+                tvDuration.setText((songInfo.getDuration()/60000) +":"+(songInfo.getDuration()/1000 - songInfo.getDuration()/60000*60));
+                seekBar.setProgress(0);
+                seekBar.setMax(songInfo.getDuration());
+                transferPlayList = true;
 
                 break;
             }
@@ -166,6 +198,12 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
         screenWidth = getScreenWidth();
         player_start_pause = findViewById(R.id.player_start_pause);
         player_start_pause.setOnClickListener(this);
+        btn_prev = findViewById(R.id.player_prev);
+        btn_next = findViewById(R.id.player_next);
+        btn_change_mode = findViewById(R.id.player_image_list_change_mode);
+        btn_prev.setOnClickListener(this);
+        btn_next.setOnClickListener(this);
+        btn_change_mode.setOnClickListener(this);
 
         tvSongName = findViewById(R.id.player_music_detail_songName);
         tvArtist = findViewById(R.id.player_music_detail_artists);
@@ -207,7 +245,6 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
         switch (v.getId()){
             case R.id.player_start_pause:{
                 //歌曲装载入mediaPlayer
-
                 if(iService.getSongId() != songInfo.getId()){
                     iService.playFromStart(songInfo.getId(), filePath);
                     iService.setSong(songInfo);
@@ -229,7 +266,7 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
             }
             case R.id.player_image_list_add:{
                 if(songInfo != null){
-                    refreshPlayList();
+                    updatePlayList();
                     AlertDialog.Builder builder = new AlertDialog.Builder(this)
                             .setTitle("选择歌单")
                             .setSingleChoiceItems(playListName.toArray(new String[playListName.size()]), -1, new DialogInterface.OnClickListener() {
@@ -243,6 +280,38 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
                     AlertDialog alertDialog = builder.create();
                     alertDialog.setCanceledOnTouchOutside(true);
                     alertDialog.show();
+                }
+                break;
+            }
+            case R.id.player_prev:{
+                if(iService.getPlayList() != null){
+                    //position = (position - 1) < 0 ? position = playList.size()-1 : position -1;
+                    iService.prev();
+                }else{
+                    Toast.makeText(this,"当前无歌单",Toast.LENGTH_SHORT).show();
+                }
+                break;
+            }
+            case R.id.player_next:{
+                if(iService.getPlayList() != null){
+                    //position = (position + 1) == playList.size() ? 0 : position + 1;
+                    iService.next();
+                }else{
+                    Toast.makeText(this,"当前无歌单",Toast.LENGTH_SHORT).show();
+                }
+                break;
+            }
+            case R.id.player_image_list_change_mode:{
+                int currentMode = iService.getLoopMode();
+                if(currentMode == 1){
+                    btn_change_mode.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_random));
+                    iService.setLoopMode(2);
+                }else if(currentMode == 2){
+                    btn_change_mode.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_queue));
+                    iService.setLoopMode(3);
+                }else{
+                    btn_change_mode.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_loop));
+                    iService.setLoopMode(1);
                 }
                 break;
             }
@@ -300,12 +369,25 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
             }else{
                 iService.updateSeekBar();
                 if(iService.isPlaying()){
+                    player_start_pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_pause));
                     needle.play();
                     disk.play();
                 }
-
             }
+            //获取循环属性
+            int loopMode = iService.getLoopMode();
+            if(loopMode == 1)
+                btn_change_mode.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_loop));
+            else if(loopMode == 2)
+                btn_change_mode.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_random));
+            else
+                btn_change_mode.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_queue));
 
+            //设定列表
+            if(transferPlayList){
+                iService.setPlayList(playList);
+                iService.setPosition(position);
+            }
         }
 
         @Override
@@ -314,7 +396,7 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
         }
     }
 
-    private void refreshPlayList(){
+    private void updatePlayList(){
         DBHelper dbHelper = new DBHelper(this,"mineMusic",null,1);
         SQLiteDatabase sqLiteDatabase= dbHelper.getReadableDatabase();
         Cursor cursor = sqLiteDatabase.rawQuery(DBHelper.SELECT_FROM_LIST,null);
@@ -340,6 +422,7 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
             cv.put("musicName",songInfo.getName());
             cv.put("artistName",getArtistsName());
             cv.put("albumName",songInfo.getAlbumName());
+            cv.put("duration",songInfo.getDuration());
             long stat = db.insert("musicDetail",null,cv);
             if(stat == -1)
                 Toast.makeText(this,"sql错误",Toast.LENGTH_SHORT).show();

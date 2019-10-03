@@ -11,6 +11,7 @@ public class GlobalData {
     public final static int MSG_SONG_READY = 400;
     public final static int MSG_CURRENT_POSITION = 401;
     public final static int MSG_SONG_NOTAVAILABLE = 404;
+    public final static int MSG_SONG_NEWSONGINFO = 499;
 
 
 

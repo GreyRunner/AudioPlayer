@@ -7,4 +7,14 @@
     tools:context=".mineFragment.musicListDetail"
     android:background="#FFFFFF">
 
+    <com.example.audioplayer.slideView.MusicListView
+        android:id="@+id/music_list_detail_listview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:divider="#F12345"
+        android:dividerHeight="5dp">
+
+    </com.example.audioplayer.slideView.MusicListView>
+
+
 </LinearLayout>

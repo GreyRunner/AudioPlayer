@@ -2,14 +2,17 @@ package com.example.audioplayer.mineFragment;
 
 
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import android.os.IBinder;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,12 +25,14 @@ import android.widget.Toast;
 
 import com.example.audioplayer.MainActivity;
 import com.example.audioplayer.R;
+import com.example.audioplayer.playerActivity.PlayerActivity;
 import com.example.audioplayer.slideView.MusicListAdapter;
 import com.example.audioplayer.slideView.MusicListView;
 
 import java.util.ArrayList;
 
 import DB.DBHelper;
+import MediaService.exposedServices;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -37,14 +42,11 @@ public class MineFragment extends Fragment {
     DBHelper dbHelper;
     Fragment that = this;
     Button newMusicList;
+    ImageButton righttop;
     private MusicListView musicListView;
     private MusicListAdapter musicListAdapter;
     private ArrayList<String> listId;
     private ArrayList<String> listName;
-
-    public MineFragment() {
-        // Required empty public constructor
-    }
 
 
     @Override
@@ -53,10 +55,33 @@ public class MineFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_mine, container, false);
         initView(view);
+
         return view;
     }
 
     public void initView(View view){
+        righttop = view.findViewById(R.id.fragment_search_player_entry);
+        righttop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getContext(), PlayerActivity.class);
+                intent.putExtra("action","showAncientMusic");
+                if(((MainActivity)getActivity()).iService.isPlaying()){
+                    intent.putExtra("playingStatus",true);
+                }else{
+                    intent.putExtra("playingStatus",false);
+                }
+                if(((MainActivity)getActivity()).iService.getSong() != null){
+                    intent.putExtra("loaded",true);
+                    intent.putExtra("songInfo",((MainActivity)getActivity()).iService.getSong());
+                }else{
+                    intent.putExtra("loaded",false);
+                }
+
+
+                startActivity(intent);
+            }
+        });
         newMusicList = view.findViewById(R.id.mine_new_music_list);
         musicListView = view.findViewById(R.id.mine_music_list);
         newMusicList.setOnClickListener(new View.OnClickListener() {

@@ -1,4 +1,6 @@
 package MediaService;
+import java.util.ArrayList;
+
 import Bean.song;
 
 public interface exposedServices{
@@ -17,4 +19,10 @@ public interface exposedServices{
     void stopUpdateSeekBar();
     void seekToPosition(int currentPosition);
     int getSongId();
+    int getLoopMode();
+    void setLoopMode(int mode);
+    ArrayList<song> getPlayList();
+    void setPlayList(ArrayList<song> pL);
+    int getPosition();
+    void setPosition(int posi);
 }
